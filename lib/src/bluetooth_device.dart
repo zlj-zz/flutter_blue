@@ -31,41 +31,46 @@ class BluetoothDevice {
     if (timeout != null) {
       timer = Timer(timeout, () {
         disconnect();
-        if(!res.isCompleted) {
-          res.completeError(TimeoutException('Failed to connect in time.', timeout));
+        if (!res.isCompleted) {
+          res.completeError(
+              TimeoutException('Failed to connect in time.', timeout));
         }
       });
     }
 
-    FlutterBlue.instance._channel.invokeMethod('connect', request.writeToBuffer()).then((f) {
+    FlutterBlue.instance._channel
+        .invokeMethod('connect', request.writeToBuffer())
+        .then((f) {
       return state.firstWhere((s) {
         var connected = s == BluetoothDeviceState.connected;
-          if(connected) {
-            timer?.cancel();
-            if(!res.isCompleted) {
-              res.complete();
-            }
+        if (connected) {
+          timer?.cancel();
+          if (!res.isCompleted) {
+            res.complete();
           }
-          return connected;
-        }, orElse: () {
-          // State stream died before timeout ?
-          if(!res.isCompleted) {
-            timer?.cancel();
-            disconnect();
-            res.completeError(Exception('state stream done without ever being connected'));
-          }
-          return BluetoothDeviceState.disconnected;
+        }
+        return connected;
+      }, orElse: () {
+        // State stream died before timeout ?
+        if (!res.isCompleted) {
+          timer?.cancel();
+          disconnect();
+          res.completeError(
+              Exception('state stream done without ever being connected'));
+        }
+        return BluetoothDeviceState.disconnected;
       }).then((s) {
         timer?.cancel();
+        print('s: $s');
         if (s == BluetoothDeviceState.connected) {
-          if(!res.isCompleted) {
+          if (!res.isCompleted) {
             res.complete();
           }
         }
       }).catchError((err) {
         timer?.cancel();
         disconnect();
-        if(!res.isCompleted) {
+        if (!res.isCompleted) {
           res.completeError(err);
         }
       });
