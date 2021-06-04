@@ -251,11 +251,13 @@ class ScanResult {
       : device = new BluetoothDevice.fromProto(p.device),
         advertisementData =
             new AdvertisementData.fromProto(p.advertisementData),
-        rssi = p.rssi;
+        rssi = p.rssi,
+        timestamp = DateTime.now();
 
   final BluetoothDevice device;
   final AdvertisementData advertisementData;
   final int rssi;
+  final DateTime timestamp;
 
   @override
   bool operator ==(Object other) =>
