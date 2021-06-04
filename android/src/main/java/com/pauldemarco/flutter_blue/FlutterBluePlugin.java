@@ -862,6 +862,19 @@ public class FlutterBluePlugin implements FlutterPlugin, ActivityAware, MethodCa
                 }
             }
             invokeMethodUIThread("DeviceState", ProtoMaker.from(gatt.getDevice(), newState).toByteArray());
+
+            if (status == 133) {
+                log(LogLevel.DEBUG, "receive 133 reconnect");
+                String deviceId = gatt.getDevice().getAddress();
+                BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceId);
+                BluetoothGatt gattServer;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    gattServer = device.connectGatt(activity, false, mGattCallback, BluetoothDevice.TRANSPORT_LE);
+                } else {
+                    gattServer = device.connectGatt(activity, false, mGattCallback);
+                }
+                mDevices.put(deviceId, new BluetoothDeviceCache(gattServer));
+            }
         }
 
         @Override
