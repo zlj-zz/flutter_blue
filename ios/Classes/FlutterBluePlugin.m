@@ -35,6 +35,7 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
 @property(nonatomic, retain) FlutterBlueStreamHandler *stateStreamHandler;
 @property(nonatomic, retain) CBCentralManager *centralManager;
 @property(nonatomic) NSMutableDictionary *scannedPeripherals;
+@property(nonatomic) NSMutableDictionary<NSString*,NSNumber*> *peripheralRSSIs;
 @property(nonatomic) NSMutableArray *servicesThatNeedDiscovered;
 @property(nonatomic) NSMutableArray *characteristicsThatNeedDiscovered;
 @property(nonatomic) LogLevel logLevel;
@@ -49,6 +50,7 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   FlutterBluePlugin* instance = [[FlutterBluePlugin alloc] init];
   instance.channel = channel;
   instance.scannedPeripherals = [NSMutableDictionary new];
+  instance.peripheralRSSIs = [NSMutableDictionary new];
   instance.servicesThatNeedDiscovered = [NSMutableArray new];
   instance.characteristicsThatNeedDiscovered = [NSMutableArray new];
   instance.logLevel = emergency;
@@ -450,6 +452,13 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
   }
 }
 
+-(void) peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error {
+    if(RSSI != nil){
+            [self.peripheralRSSIs setValue:RSSI  forKey:[[peripheral identifier] UUIDString]];
+    }
+    NSLog(@"RSSI returned %@", [RSSI stringValue]);
+}
+
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
   NSLog(@"didUpdateValueForCharacteristic %@", [peripheral.identifier UUIDString]);
   ProtosReadCharacteristicResponse *result = [[ProtosReadCharacteristicResponse alloc] init];
@@ -614,9 +623,16 @@ typedef NS_ENUM(NSUInteger, LogLevel) {
 
 - (ProtosBluetoothDevice*)toDeviceProto:(CBPeripheral *)peripheral {
   ProtosBluetoothDevice *result = [[ProtosBluetoothDevice alloc] init];
+   if(peripheral.state == CBPeripheralStateConnected){
+        [peripheral readRSSI];
+   }
   [result setName:[peripheral name]];
   [result setRemoteId:[[peripheral identifier] UUIDString]];
   [result setType:ProtosBluetoothDevice_Type_Le]; // TODO: Does iOS differentiate?
+   NSNumber* rssiValue = [self.peripheralRSSIs valueForKey:[[peripheral identifier] UUIDString]];
+   if([rssiValue intValue] !=0){
+         [result setRssi:[rssiValue intValue]];
+   }
   return result;
 }
 
