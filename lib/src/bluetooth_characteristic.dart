@@ -57,6 +57,7 @@ class BluetoothCharacteristic {
         return c;
       });
 
+  Stream<List<int>> get onValueChangedStream => _onValueChangedStream;
   Stream<List<int>> get _onValueChangedStream =>
       _onCharacteristicChangedStream.map((c) => c.lastValue);
 
